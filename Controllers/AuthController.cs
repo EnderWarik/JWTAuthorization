@@ -6,10 +6,6 @@ using AuthorizationWithJWT.Library;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 
 namespace AuthorizationWithJWT.Controllers
 {
@@ -34,7 +30,7 @@ namespace AuthorizationWithJWT.Controllers
 
             if (user != null)
             {
-                var token = Token(user);
+                var token = GenerateJWT(user);
                 return Ok(new { access_token = token });
                 //generate jwt
             }
@@ -82,7 +78,7 @@ namespace AuthorizationWithJWT.Controllers
         {
             var authParams = options.Value;
             var securityKey = authParams.GetSymmetricSecurityKey();
-            var credentinals = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var credentinals = new SigningCredentials(securityKey,SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Email,user.Email),
@@ -102,60 +98,8 @@ namespace AuthorizationWithJWT.Controllers
                 claims,
                 expires: DateTime.Now.AddSeconds(authParams.TokenLifeTime),
                 signingCredentials: credentinals);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-
-
-
             
-
-        [HttpPost("/token")]
-        public string Token(Account user)
-
-
-        {
-            var authParams = options.Value;
-            var securityKey = authParams.GetSymmetricSecurityKey();
-            var identity = GetIdentity(user);
-
-            var now = DateTime.UtcNow;
-            // создаем JWT-токен
-            var jwt = new JwtSecurityToken(
-                    issuer: authParams.Issure,
-                    audience: authParams.Audience,
-                    notBefore: now,
-                    claims: identity.Claims,
-                    expires: now.Add(TimeSpan.FromMinutes(authParams.TokenLifeTime)),
-                    signingCredentials: new SigningCredentials(authParams.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
-            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
-
-            var response = new
-            {
-                access_token = encodedJwt,
-                username = identity.Name
-            };
-
-            return encodedJwt;
-        }
-
-
-        private ClaimsIdentity GetIdentity(Account user)
-        {
-
-
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimsIdentity.DefaultNameClaimType, user.Email),
-                    new Claim(ClaimsIdentity.DefaultRoleClaimType, "User")
-                };
-                ClaimsIdentity claimsIdentity =
-                new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
-                    ClaimsIdentity.DefaultRoleClaimType);
-                return claimsIdentity;
-            }
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
